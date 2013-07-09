@@ -1,4 +1,5 @@
-/* sbt -- Simple Build Tool
+/*
+ * sbt -- Simple Build Tool
  * Copyright 2008, 2009, 2010 Mark Harrah
  */
 package com.gramercysoftware.multipublish
@@ -15,6 +16,12 @@ import org.apache.ivy.plugins.resolver._
 import sbt._
 import org.apache.ivy.core.module.descriptor.{Artifact ⇒ IvyArtifact}
 
+/*
+ * ConvertResolver has been taken from the IvySbt object in Ivy.scala. It is necessary in order to convert
+ * an sbt Resolver to an Ivy DependencyResolver for publishing, but in sbt this object is private in scope,
+ * making it unavailable so the code has had to be duplicated here, along with the fragment that deals
+ * with ChainedResolvers.
+ */
 object ConvertResolver {
   /** Converts the given sbt resolver into an Ivy resolver.. */
   def apply(r: Resolver)(implicit settings: IvySettings, log: Logger) = {
