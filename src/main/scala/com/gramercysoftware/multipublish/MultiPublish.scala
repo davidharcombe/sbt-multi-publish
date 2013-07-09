@@ -25,7 +25,6 @@ object MultiPublish extends Plugin {
                 val artifacts: Seq[(IvyArtifact, File)] = IvyActions.mapArtifacts(module, getSV(cv), a)
                 checkFilesPresent(artifacts)
                 try {
-                  resolver.setSettings(ivy.getSettings)
                   resolver.beginPublishTransaction(module.getModuleRevisionId(), true);
                   for ((artifact, file) <- artifacts) {
                     s.log.debug("  >>> artifact => %s".format(artifact))

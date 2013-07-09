@@ -38,6 +38,7 @@ object ConvertResolver {
         val resolver = new PluginCapableResolver
         initializeMavenStyle(resolver, repo.name, repo.root)
         resolver.setPatterns() // has to be done after initializeMavenStyle, which calls methods that overwrite the patterns
+        resolver.setSettings(settings)
         resolver
       }
       case r: JavaNet1Repository => {
@@ -48,17 +49,20 @@ object ConvertResolver {
         }
         initializeMavenStyle(resolver, JavaNet1Repository.name, "http://download.java.net/maven/1/")
         resolver.setPattern("[organisation]/[ext]s/[module]-[revision](-[classifier]).[ext]")
+        resolver.setSettings(settings)
         resolver
       }
       case repo: SshRepository => {
         val resolver = new SshResolver with DescriptorRequired
         initializeSSHResolver(resolver, repo)
         repo.publishPermissions.foreach(perm => resolver.setPublishPermissions(perm))
+        resolver.setSettings(settings)
         resolver
       }
       case repo: SftpRepository => {
         val resolver = new SFTPResolver
         initializeSSHResolver(resolver, repo)
+        resolver.setSettings(settings)
         resolver
       }
       case repo: FileRepository => {
@@ -68,21 +72,31 @@ object ConvertResolver {
         import repo.configuration.{isLocal, isTransactional}
         resolver.setLocal(isLocal)
         isTransactional.foreach(value => resolver.setTransactional(value.toString))
+        resolver.setSettings(settings)
         resolver
       }
       case repo: URLRepository => {
         val resolver = new URLResolver with DescriptorRequired
         resolver.setName(repo.name)
         initializePatterns(resolver, repo.patterns)
+        resolver.setSettings(settings)
         resolver
       }
       case repo: ChainedResolver => resolverChain(repo.name, repo.resolvers, false, settings, log)
-      case repo: RawRepository => repo.resolver
+      case repo: RawRepository =>
+        val resolver = repo.resolver
+        resolver.setSettings(settings)
+        resolver
     }
   }
 
   private def resolverChain(name: String, resolvers: Seq[Resolver], localOnly: Boolean, settings: IvySettings, log: Logger): DependencyResolver = {
     val newDefault = new ChainResolver {
+      def hasImplicitClassifier(artifact: IvyArtifact): Boolean = {
+        import collection.JavaConversions._
+        artifact.getQualifiedExtraAttributes.keys.exists(_.asInstanceOf[String] startsWith "m:")
+      }
+
       // Technically, this should be applied to module configurations.
       // That would require custom subclasses of all resolver types in ConvertResolver (a delegation approach does not work).
       // It would be better to get proper support into Ivy.
@@ -95,6 +109,7 @@ object ConvertResolver {
         super.getDependency(dd, data)
       }
     }
+
     newDefault.setName(name)
     newDefault.setReturnFirst(true)
     newDefault.setCheckmodified(false)
@@ -102,12 +117,9 @@ object ConvertResolver {
       log.debug("\t" + sbtResolver)
       newDefault.add(ConvertResolver(sbtResolver)(settings, log))
     }
-    newDefault
-  }
 
-  private def hasImplicitClassifier(artifact: IvyArtifact): Boolean = {
-    import collection.JavaConversions._
-    artifact.getQualifiedExtraAttributes.keys.exists(_.asInstanceOf[String] startsWith "m:")
+    newDefault.setSettings(settings)
+    newDefault
   }
 
   private sealed trait DescriptorRequired extends BasicResolver {
