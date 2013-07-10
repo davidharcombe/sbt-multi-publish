@@ -7,11 +7,11 @@ import org.apache.ivy.core.module.descriptor.{Artifact ⇒ IvyArtifact}
 object MultiPublish extends Plugin {
   lazy val multiPublish = TaskKey[Unit]("multi-publish", "Publish to list of repos")
 
-  lazy val repositoryList = SettingKey[Seq[Option[Resolver]]]("repositoryList", "List of repositories to publish to.")
+  lazy val repositoryList = SettingKey[Seq[Resolver]]("repositoryList", "List of repositories to publish to.")
 
   lazy val multiPublishTask = {
-    multiPublish <<= (streams, repositoryList, ivyModule, packagedArtifacts, ivyConfiguration, scalaVersion) map {
-      (s, rl, im, a, ic, sv) ⇒
+    multiPublish <<= (streams, repositoryList, ivyModule, packagedArtifacts, ivyConfiguration, scalaVersion, publishTo) map {
+      (s, rl, im, a, ic, sv, pt) ⇒
         implicit val log: Logger = s.log
 
         im.withModule(log) {
@@ -21,18 +21,23 @@ object MultiPublish extends Plugin {
             val artifacts: Seq[(IvyArtifact, File)] = IvyActions.mapArtifacts(module, Some((sv) ⇒ sv), a)
             checkFilesPresent(artifacts)
 
-            rl foreach {
-              repo =>
-                s.log.info("Processing resolver %s".format(repo.get.name))
-                val resolver = ConvertResolver(repo.get)
+            val resolverList = pt match {
+              case None => rl
+              case Some(resolver) => rl :+ resolver
+            }
+
+            resolverList.toList.distinct foreach {
+              resolver =>
+                s.log.info("Processing resolver %s".format(resolver.name))
+                val ivyResolver = ConvertResolver(resolver)
                 try {
-                  resolver.beginPublishTransaction(module.getModuleRevisionId, true)
-                  for ((artifact, file) <- artifacts) resolver.publish(artifact, file, true)
-                  resolver.commitPublishTransaction
+                  ivyResolver.beginPublishTransaction(module.getModuleRevisionId, true)
+                  for ((artifact, file) <- artifacts) ivyResolver.publish(artifact, file, true)
+                  ivyResolver.commitPublishTransaction
                 } catch {
                   case e: Throwable =>
                     try {
-                      resolver.abortPublishTransaction
+                      ivyResolver.abortPublishTransaction
                     } finally {
                       throw e
                     }

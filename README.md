@@ -12,9 +12,9 @@ Ensure the following lines are included in the project/plugins.sbt:
 		"David's Releases" at "http://davidharcombe.github.io/releases"
 	)
 
-	addSbtPlugin("com.gramercysoftware" % "sbt-multi-publish0" % "<version>")
+	addSbtPlugin("com.gramercysoftware" % "sbt-multi-publish" % "<version>")
 	
-The current version is **1.0.0-SNAPSHOT**
+The current version is **1.0.0**
 
 ## Usage ##
 
@@ -24,7 +24,9 @@ You can issue the command manually, as
 	
 or you can override the standard sbt `publish` command by adding the following line to your `build.sbt` file:
 
-	publish <<= com.gramercysoftware.multipublish.MultiPublish.multiPublish
+    import com.gramercysoftware.multipublish.MultiPublish._
+
+	publish <<= multiPublish
 
 ## Configuration ##
 
@@ -32,21 +34,25 @@ or you can override the standard sbt `publish` command by adding the following l
 repositoryList <<= version { (v: String) =>
   if (v.trim.endsWith("-SNAPSHOT"))
     Seq(
-        Some(Resolver.file("Github snapshots", file("../my.github.io/snapshots/"))),
-        Some("Personal snapshots" at "http://my.repo.com/snapshots/"),
-        Some("Remote snapshots" at "http://artifactory.organization.com/artifactory/snapshots")
+        Resolver.file("Github snapshots", file("../my.github.io/snapshots/")),
+        "Personal snapshots" at "http://my.repo.com/snapshots/",
+        "Remote snapshots" at "http://artifactory.organization.com/artifactory/snapshots"
     )
   else
     Seq(
-        Some(Resolver.file("Github releases", file("../my.github.io/releases/"))),
-        Some("Remote releases" at "http://artifactory.organization.com/artifactory/releases")
+        Resolver.file("Github releases", file("../my.github.io/releases/")),
+        "Remote releases" at "http://artifactory.organization.com/artifactory/releases"
     )
 }
 ```
 
-The `repositoryList` is a `Seq[Option[Resolver]]`, each defined as would be any other sbt resolver. The same manner of detecting snapshots can be used as one would normally with the `publishTo` key.
+The `repositoryList` is a `Seq[Resolver]`, each defined as would be any other sbt resolver. The same manner of detecting snapshots can be used as one would normally with the `publishTo` key.
 
 When the `multi-publish` task runs, the final artifacts are published to each of the resolvers in turn.
+
+If you are overriding `publish`	, there's no need for a `publishTo` block in the `build.sbt` file.
+
+If there is a `publishTo` block, the resolver from there is added to the list of repositories automatically, and 
 
 ## License
 
