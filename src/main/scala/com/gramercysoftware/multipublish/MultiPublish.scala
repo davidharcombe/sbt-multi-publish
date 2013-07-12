@@ -19,29 +19,17 @@ object MultiPublish extends Plugin {
             implicit val settings = ivy.getSettings
 
             val artifacts: Seq[(IvyArtifact, File)] = IvyActions.mapArtifacts(module, Some((sv) ⇒ sv), a)
-            checkFilesPresent(artifacts)
 
-            val resolverList = pt match {
-              case None => rl
-              case Some(resolver) => rl :+ resolver
-            }
-
-            resolverList.toList.distinct foreach {
+            {
+              pt match {
+                case None => rl
+                case Some(resolver) => rl :+ resolver
+              }
+            }.toList.distinct foreach {
               resolver =>
                 s.log.info("Processing resolver %s".format(resolver.name))
                 val ivyResolver = ConvertResolver(resolver)
-                try {
-                  ivyResolver.beginPublishTransaction(module.getModuleRevisionId, true)
-                  for ((artifact, file) <- artifacts) ivyResolver.publish(artifact, file, true)
-                  ivyResolver.commitPublishTransaction
-                } catch {
-                  case e: Throwable =>
-                    try {
-                      ivyResolver.abortPublishTransaction
-                    } finally {
-                      throw e
-                    }
-                }
+                IvyActions.publish(module, artifacts, ivyResolver, true)
             }
 
         }
