@@ -4,15 +4,17 @@ name := "sbt-multi-publish"
 
 organization := "com.gramercysoftware"
 
-version := "1.0.1"
+version := "2.0.0"
 
-scalaVersion := "2.9.2"
+scalaVersion := "2.10.2"
 
-sbtVersion := "0.12.0"
+sbtVersion := "0.13.0"
 
 description := "sbt plugin to publish to multiple repositories"
 
 scalacOptions := Seq( "-deprecation", "-unchecked" )
+
+//libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value
 
 publishTo <<= version { (v: String) =>
   if (v.trim.endsWith("-SNAPSHOT"))
