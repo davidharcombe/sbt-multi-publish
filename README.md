@@ -14,7 +14,10 @@ Ensure the following lines are included in the project/plugins.sbt:
 
 	addSbtPlugin("com.gramercysoftware" % "sbt-multi-publish" % "<version>")
 	
-The current version is **1.0.1**
+The current versions are:
+
+* For sbt 0.12.x: **1.0.1**
+* For sbt 0.13: **2.0.0**
 
 ## Usage ##
 
