@@ -2,7 +2,7 @@ package com.gramercysoftware.multipublish
 
 import sbt._
 import sbt.Keys._
-import org.apache.ivy.core.module.descriptor.{Artifact ⇒ IvyArtifact}
+import org.apache.ivy.core.module.descriptor.{ Artifact ⇒ IvyArtifact }
 
 object MultiPublish extends Plugin {
   lazy val multiPublish = TaskKey[Unit]("multi-publish", "Publish to list of repos")
@@ -15,19 +15,19 @@ object MultiPublish extends Plugin {
         implicit val log: Logger = s.log
 
         im.withModule(log) {
-          case (ivy, module, _) =>
+          case (ivy, module, _) ⇒
             implicit val settings = ivy.getSettings
 
             val artifacts: Seq[(IvyArtifact, File)] = IvyActions.mapArtifacts(module, Some((sv) ⇒ sv), a)
 
             {
               pt match {
-                case None => rl
-                case Some(resolver) => rl :+ resolver
+                case None ⇒ rl
+                case Some(resolver) ⇒ rl :+ resolver
               }
             }.toList.distinct foreach {
-              resolver =>
-                s.log.info("Processing resolver %s".format(resolver.name))
+              resolver ⇒
+                s.log.info(s"Processing resolver ${resolver.name}")
                 val ivyResolver = ConvertResolver(resolver)
                 IvyActions.publish(module, artifacts, ivyResolver, true)
             }
@@ -38,14 +38,13 @@ object MultiPublish extends Plugin {
 
   private[this] def checkFilesPresent(artifacts: Seq[(IvyArtifact, File)])(implicit log: Logger) {
     val missing = artifacts filter {
-      case (a, file) => !file.exists
+      case (a, file) ⇒ !file.exists
     }
     if (missing.nonEmpty)
-      log.error("Missing files for publishing:\n\t" + missing.map(_._2.getAbsolutePath).mkString("\n\t"))
+      log.error(s"Missing files for publishing:\n\t${missing.map(_._2.getAbsolutePath).mkString("\n\t")}")
   }
 
   override lazy val settings = Seq(
     multiPublishTask,
-    repositoryList := Seq.empty
-  )
+    repositoryList := Seq.empty)
 }
